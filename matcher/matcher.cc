@@ -143,34 +143,20 @@ private:
     acceptFunc *accept_;
 };
 
-static void createMatchSequence(parseStack *stack) {
-    // Add the contents of the stack to a MatchSequence Object
-    MatchSequence *sequence = new MatchSequence();
+template <class MatchOp>
+static void reduceMatchOp(parseStack *stack) {
+    // Add the contents of the stack to a MatchAtom Object
+    MatchOp *var = new MatchOp();
     while (true) {
         MatchAtom *atom = stack->ReleaseHeadVariable();
         if (atom == NULL) {
             break;
         }
-        sequence->add(atom);
+        var->add(atom);
     }
     stack->Pop();
-    stack->AddVariable(sequence);
+    stack->AddVariable(var);
 }
-
-static void createMatchOr(parseStack *stack) {
-    // Add the contents of the stack to a MatchSequence Object
-    MatchOr *alternative = new MatchOr();
-    while (true) {
-        MatchAtom *atom = stack->ReleaseHeadVariable();
-        if (atom == NULL) {
-            break;
-        }
-        alternative->add(atom);
-    }
-    stack->Pop();
-    stack->AddVariable(alternative);
-}
-
 
 class parseAtomOptional : public parseAtom {
 public:
@@ -192,7 +178,7 @@ public:
         }
         // cout << "exit optional " << name() << " bytes: " << consumed << endl;
         if (stack->VariableCount() > 1) {
-            createMatchSequence(stack);
+            reduceMatchOp<MatchSequence>(stack);
         } else {
             stack->RemoveFrame();
         }
@@ -270,10 +256,10 @@ private:
     void createMatchOperation(parseStack *stack) {
         switch (type_) {
             case OP_AND:
-                createMatchSequence(stack);
+                reduceMatchOp<MatchSequence>(stack);
                 break;
             case OP_OR:
-                createMatchOr(stack);
+                reduceMatchOp<MatchOr>(stack);
                 break;
             case OP_INVALID:
                 assert(false);
