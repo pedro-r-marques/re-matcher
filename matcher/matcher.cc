@@ -13,11 +13,8 @@
 #include <string>
 #include <ctype.h>
 
-#include "match_or.h"
-#include "match_atom.h"
-#include "match_string.h"
-#include "match_sequence.h"
-#include "match_chars.h"
+#include "match_ast.h"
+#include "util.h"
 
 using namespace std;
 
@@ -25,9 +22,7 @@ Matcher::Matcher() {
 }
 
 Matcher::~Matcher() {
-    for (auto iter = rules_.begin(); iter != rules_.end(); ++iter) {
-        delete *iter;
-    }
+    STLDeleteValues(&rules_);
 }
 
 // parseStack implements a stack which allows for multiple objects to be
@@ -37,9 +32,7 @@ public:
     parseStack() {
     }
     ~parseStack() {
-        for (auto iter = vec_.begin(); iter != vec_.end(); ++iter) {
-            delete (*iter);
-        }
+        STLDeleteValues(&vec_);
     }
     // Push a new stack frame.
     void Push() {
@@ -65,6 +58,11 @@ public:
             return nullptr;
         }
         return vec_.back();
+    }
+    
+    void ReplaceBack(MatchAtom *atom) {
+        vec_.pop_back();
+        vec_.push_back(atom);
     }
 
     // RemoveFrame clears this stack frame, transfering the ownership of the variables up
@@ -115,11 +113,14 @@ private:
 // expr_atom: expr_match expr_cardinality
 // expr_match: expr_class | expr_interval | expr_string
 
+// operators: |?+*()
+// precedence: concatenation < OR < cardinality
+
 class parseAtom {
 public:
     typedef void acceptFunc(parseStack *, const string &piece);
 
-    parseAtom(const char *name) : name_(name) {
+    parseAtom(const char *name) : name_(name), accept_(nullptr) {
     }
 
     virtual int Parse(parseStack *stack, const char *str) = 0;
@@ -200,6 +201,7 @@ public:
             int result = (*iter)->Parse(stack, str);
             if (result > 0) {
                 // cout << "accept alternative " << name() << endl;
+                Accept(stack, string(str, result));
                 return result;
             }
         }
@@ -307,6 +309,30 @@ public:
     }
 };
 
+static bool isCardinality(char c) {
+    switch (c) {
+        case '?':
+        case '*':
+        case '+':
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+static bool isReserved(char c) {
+    switch (c) {
+        case '(':
+        case ')':
+        case '|':
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
 class parseString : public parseAtom {
 public:
     parseString(const char *name) : parseAtom(name) {
@@ -315,7 +341,14 @@ public:
     virtual int Parse(parseStack *stack, const char *str) {
         int advance = 0;
         for (char c = str[0]; c; c = str[++advance]) {
-            if (!isalnum(c)) {
+            // Cardinality is stronger than concatenation
+            if (isCardinality(c)) {
+                if (advance > 1) {
+                    --advance;
+                }
+                break;
+            }
+            if (isReserved(c)) {
                 break;
             }
         }
@@ -326,19 +359,30 @@ public:
     }
 };
 
-static void MatchSetCardinalityPlus(parseStack *stack, const string &piece) {
-    MatchAtom *atom = stack->back();
-    if (atom == nullptr) {
-        cerr << "Unable to set cardinality: empty stack" << endl;
-        return;
-    }
-    atom->set_cardinality(MatchAtom::MATCH_PLUS);
-}
-
 static void MatchAddClassAtom(parseStack *stack, const string &piece) {
     if (piece == "\\s") {
         stack->AddVariable(new MatchChars(MatchChars::CHARS_SPACES));
     }
+}
+
+static void MatchCardinalityAccept(parseStack *stack, const string &piece) {
+    MatchGroup::Cardinality cardinality = MatchGroup::MATCH_ONE;
+    switch (piece.at(0)) {
+        case '+':
+            cardinality = MatchGroup::MATCH_PLUS;
+            break;
+        case '?':
+            cardinality = MatchGroup::MATCH_OPTIONAL;
+            break;
+        case '*':
+            cardinality = MatchGroup::MATCH_WILDCARD;
+            break;
+        default:
+            break;
+    }
+    MatchAtom *last = stack->back();
+    MatchGroup *group = new MatchGroup(last, cardinality);
+    stack->ReplaceBack(group);
 }
 
 Matcher *Matcher::Parse(const char *str) {
@@ -351,9 +395,13 @@ Matcher *Matcher::Parse(const char *str) {
     parseExprClass.add(&parseSpaceClass);
 
     parseToken parseCardinalityPlus("+");
-    parseCardinalityPlus.set_accept_function(MatchSetCardinalityPlus);
+    parseToken parseCardinalityQuestionMark("?");
+    parseToken parseCardinalityWildcard("*");
     parseAlternative parseCardinality("cardinality");
     parseCardinality.add(&parseCardinalityPlus);
+    parseCardinality.add(&parseCardinalityQuestionMark);
+    parseCardinality.add(&parseCardinalityWildcard);
+    parseCardinality.set_accept_function(MatchCardinalityAccept);
     parseAtomOptional parseExprOptionalCardinality("opt_cardinality", &parseCardinality);
 
     // match: class | interval | string
@@ -382,6 +430,7 @@ Matcher *Matcher::Parse(const char *str) {
     parseGroup.add(&leftParentisis);
     parseGroup.add(&parseExprAltAtom);
     parseGroup.add(&rightParentisis);
+    parseGroup.add(&parseExprOptionalCardinality);
 
 
     parseAlternative parseExprItem("expr_item");
@@ -405,10 +454,6 @@ Matcher *Matcher::Parse(const char *str) {
 
 bool Matcher::Match(const char *str) {
     for (auto iter = rules_.begin(); iter != rules_.end(); ++iter) {
-        int result = (*iter)->Match(str);
-        if (result > 0) {
-            return true;
-        }
     }
     return false;
 }

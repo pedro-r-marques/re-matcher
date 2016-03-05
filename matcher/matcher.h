@@ -11,7 +11,8 @@
 
 #include <vector>
 
-#include "match_atom.h"
+class MatchAtom;
+class MatchState;
 
 class Matcher {
 public:
@@ -22,7 +23,12 @@ public:
 private:
     Matcher();
     Matcher(const Matcher &) = delete;
+    
+    void BuildStateMachine();
+
     void AddRules(std::vector<MatchAtom *>::iterator, std::vector<MatchAtom *>::iterator);
+
     std::vector<MatchAtom *> rules_;
+    std::vector<MatchState *> states_;
 };
 #endif /* matcher_h */

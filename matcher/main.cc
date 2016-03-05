@@ -1,51 +1,69 @@
 //
-//  main.cpp
+//  main.cc
 //  matcher
 //
 //  Created by Pedro Roque Marques on 3/1/16.
 //  Copyright © 2016 Code samples. All rights reserved.
 //
 
-#include <iostream>
-#include <memory>
-
 #include "matcher.h"
 
-bool test_matcher() {
-    const char *test_matches[] = {
-        "foo 1",
-        "bar 2",
-        "foo  3",
-    };
-    const char *test_no_matches[] = {
-        "baz 1",
-        "fo 2",
-        "bar3",
-        "foo a"
-    };
+#include <array>
+#include <iostream>
+#include <memory>
+#include <vector>
 
+using namespace std;
+
+bool test_matcher() {
     struct MatcherTest {
         const char *expr;
-        const char **match;
-        const char **no_match;
-    } test = {
-        "(foo|bar)\\s+([0-9]+)",
-        test_matches,
-        test_no_matches
+        vector<string> match;
+        vector<string> no_match;
+    } const tests[] = {
+        {
+            "(foo|bar)\\s+([0-9]+)",
+            {"foo 1", "bar 2", "foo  3"},
+            {"baz 1", "fo 2", "bar3", "foo a"}
+        },
+        {
+            "a(bb)+a",
+            {"abba", "abbbba"},
+            {"aa", "aba", "abbba"},
+        },
+        {
+            "a?a?a?aaa",
+            {"aaa", "aaaa"},
+            {"aa"}
+        },
+        {
+            "ab*a",
+            {"aba", "abba", "aa"},
+            {"aca"}
+        },
+        {
+            "a(b|c)+d",
+            {"abd", "abcd", "abccd"},
+            {"ad", "axd"},
+        }
     };
     bool success = true;
     
-    std::unique_ptr<Matcher> m(Matcher::Parse(test.expr));
-    for (int i = 0; i < sizeof(test_matches) / sizeof(char *); i++) {
-        if (!m->Match(test.match[i])) {
-            std::cerr << "match " << test.match[i] << " expected true, got false" << std::endl;
-            success = false;
+    for (int t = 0; t < sizeof(tests) / sizeof(struct MatcherTest); ++t) {
+        const MatcherTest *test = &tests[t];
+        std::unique_ptr<Matcher> m(Matcher::Parse(test->expr));
+        
+        for (int i = 0; i < test->match.size(); i++) {
+            if (!m->Match(test->match[i].c_str())) {
+                std::cerr << "match " << test->match[i] << " expected true, got false" << std::endl;
+                success = false;
+            }
         }
-    }
-    for (int i = 0; i < sizeof(test_no_matches) / sizeof(char *); i++) {
-        if (m->Match(test.no_match[i])) {
-            std::cerr << "match " << test.no_match[i] << " expected false, got true" << std::endl;
-            success = false;
+        for (int i = 0; i < test->match.size() / sizeof(char *); i++) {
+            if (m->Match(test->no_match[i].c_str())) {
+                std::cerr << "match " << test->no_match[i] << " expected false, got true" << std::endl;
+                success = false;
+            }
         }
     }
     return success;
