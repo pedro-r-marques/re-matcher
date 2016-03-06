@@ -24,11 +24,8 @@ private:
     Matcher();
     Matcher(const Matcher &) = delete;
     
-    void BuildStateMachine();
+    void BuildStateMachine(const MatchAtom *ast);
 
-    void AddRules(std::vector<MatchAtom *>::iterator, std::vector<MatchAtom *>::iterator);
-
-    std::vector<MatchAtom *> rules_;
     std::vector<MatchState *> states_;
 };
 #endif /* matcher_h */

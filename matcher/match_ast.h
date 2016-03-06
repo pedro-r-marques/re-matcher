@@ -13,11 +13,14 @@
 #include <string>
 #include <vector>
 
+class MatchState;
+
 class MatchAtom {
 public:
     virtual ~MatchAtom();
     // Repr returns a string representation of the match.
-    virtual std::string Repr() = 0;
+    virtual std::string Repr() const = 0;
+    virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const = 0;
 
 protected:
     MatchAtom();
@@ -36,7 +39,8 @@ public:
         MATCH_WILDCARD_NONGREEDY    // (?*)
     };
     MatchGroup(MatchAtom *atom, Cardinality cardinality);
-    virtual std::string Repr();
+    virtual std::string Repr() const;
+    virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const;
 
 private:
     std::unique_ptr<MatchAtom> atom_;
@@ -47,8 +51,9 @@ class MatchSequence : public MatchAtom {
 public:
     ~MatchSequence();
 
-    virtual std::string Repr();
-    
+    virtual std::string Repr() const;
+    virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const;
+
     void add(MatchAtom *atom);
     
 private:
@@ -58,8 +63,9 @@ private:
 class MatchOr : public MatchAtom {
 public:
     ~MatchOr();
-    virtual std::string Repr();
-    
+    virtual std::string Repr() const;
+    virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const;
+
     void add(MatchAtom *atom);
     
 private:
@@ -75,7 +81,8 @@ public:
         CHARS_RANGES,
     };
     MatchChars(CharClass charClass);
-    virtual std::string Repr();
+    virtual std::string Repr() const;
+    virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const;
 
 private:
     CharClass class_;
@@ -84,7 +91,8 @@ private:
 class MatchString : public MatchAtom {
 public:
     MatchString(const std::string &piece);
-    virtual std::string Repr();
+    virtual std::string Repr() const;
+    virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const;
 
 private:
     std::string piece_;
