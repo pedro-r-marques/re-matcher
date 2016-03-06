@@ -1,8 +1,7 @@
 all: matcher-test
 
 CXXFLAGS=-std=c++14 -Wall -Werror
-LIB_SRCS := match_atom.cc match_chars.cc match_or.cc match_sequence.cc \
-	match_string.cc matcher.cc
+LIB_SRCS := match_ast.cc match_state.cc match_parser.cc matcher.cc
 
 LIB_OBJS := $(LIB_SRCS:.cc=.o)
 
