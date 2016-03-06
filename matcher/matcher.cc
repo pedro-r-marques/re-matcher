@@ -8,9 +8,9 @@
 
 #include "matcher.h"
 
-//#include <cassert>
 #include <iostream>
 #include <memory>
+#include <set>
 
 #include "match_ast.h"
 #include "match_parser.h"
@@ -36,7 +36,83 @@ Matcher *Matcher::Parse(const char *str) {
     return m;
 }
 
+static void expandStarTransition(const vector<MatchState *> *in, vector<MatchState *> *out) {
+    vector <MatchState *> expand(in->begin(), in->end());
+    set <MatchState *> seen;
+
+    while (!expand.empty()) {
+        vector<MatchState *> next;
+        for (auto iter = expand.begin(); iter != expand.end(); ++iter) {
+            const vector<MatchState *> *starPtr = (*iter)->GetCharTransition(MatchState::TRANSITION_STAR);
+            if (starPtr == nullptr) {
+                continue;
+            }
+            seen.insert(*iter);
+            out->insert(out->end(), starPtr->begin(), starPtr->end());
+            for (auto desc = starPtr->begin(); desc != starPtr->end(); ++desc) {
+                if (seen.find(*desc) == seen.end()) {
+                    next.push_back(*desc);
+                }
+            }
+        }
+        expand = next;
+    }
+}
+
 bool Matcher::Match(const char *str) {
+    vector<MatchState *> feasible;
+    set<MatchState *> plusSet;
+    feasible.push_back(states_.front());
+
+    const char *current = str;
+    for (char ch = *current++; ch; ch = *current++) {
+        vector<MatchState *> epsilon;
+        vector<MatchState *> next;
+
+        expandStarTransition(&feasible, &epsilon);
+        
+        for (auto iter = feasible.begin(); iter != feasible.end(); ++iter) {
+            const vector<MatchState *> *starPtr = (*iter)->GetCharTransition(MatchState::TRANSITION_PLUS);
+            if (starPtr == nullptr) {
+                continue;
+            }
+            if (plusSet.find((*iter)) != plusSet.end()) {
+                epsilon.insert(epsilon.end(), starPtr->begin(), starPtr->end());
+                expandStarTransition(starPtr, &epsilon);
+            }
+        }
+
+        feasible.insert(feasible.end(), epsilon.begin(), epsilon.end());
+
+        for (auto iter = feasible.begin(); iter != feasible.end(); ++iter) {
+            const vector<MatchState *> *charPtr = (*iter)->GetCharTransition(ch);
+            if (charPtr != nullptr) {
+                next.insert(next.begin(), charPtr->begin(), charPtr->end());
+                plusSet.insert(*iter);
+                
+            }
+        }
+        
+        feasible.swap(next);
+    }
+
+    vector<MatchState *> epsilon;
+    for (auto iter = feasible.begin(); iter != feasible.end(); ++iter) {
+        const vector<MatchState *> *starPtr = (*iter)->GetCharTransition(MatchState::TRANSITION_PLUS);
+        if (starPtr == nullptr) {
+            continue;
+        }
+        if (plusSet.find((*iter)) != plusSet.end()) {
+            epsilon.insert(epsilon.end(), starPtr->begin(), starPtr->end());
+        }
+    }
+    feasible.insert(feasible.end(), epsilon.begin(), epsilon.end());
+
+    for (auto iter = feasible.begin(); iter != feasible.end(); ++iter) {
+        if ((*iter)->name() == "<end>") {
+            return true;
+        }
+    }
     return false;
 }
 

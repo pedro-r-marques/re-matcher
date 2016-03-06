@@ -15,6 +15,11 @@
 
 class MatchState {
 public:
+    enum {
+        TRANSITION_STAR = 0,
+        TRANSITION_PLUS = 1
+    };
+
     typedef std::map<char, std::vector<MatchState *> > EdgeMap;
     MatchState(const char *name);
 
@@ -22,11 +27,12 @@ public:
     void AddPlusTransition(MatchState *dst);
     void AddCharTransition(MatchState *dst, char c);
 
+    const std::vector<MatchState *> *GetCharTransition(char c);
+
+    const std::string name() const {
+        return name_;
+    }
 private:
-    enum {
-        TRANSITION_STAR = 0,
-        TRANSITION_PLUS = 1
-    };
     MatchState(const MatchState &) = delete;
 
     std::string name_;

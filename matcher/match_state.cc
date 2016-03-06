@@ -31,3 +31,11 @@ void MatchState::AddCharTransition(MatchState *dst, char c) {
     }
     vec->push_back(dst);
 }
+
+const std::vector<MatchState *> *MatchState::GetCharTransition(char c) {
+    auto loc = edges_.find(c);
+    if (loc == edges_.end()) {
+        return nullptr;
+    }
+    return &loc->second;
+}

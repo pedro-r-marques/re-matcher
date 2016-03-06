@@ -173,7 +173,9 @@ string MatchString::Repr() const {
 void MatchString::BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const {
     MatchState *current = start;
     for (int i = 0; i < piece_.length() - 1; i++) {
-        MatchState *next = new MatchState("");
+        string name;
+        name.push_back(piece_[i]);
+        MatchState *next = new MatchState(name.c_str());
         states->push_back(next);
         current->AddCharTransition(next, piece_[i]);
         current = next;
