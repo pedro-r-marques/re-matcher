@@ -40,11 +40,8 @@ string MatchOr::Repr() const {
 }
 
 void MatchOr::BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const {
-    MatchState *state = new MatchState("OR");
-    start->AddStarTransition(state);
-    states->push_back(state);
     for (auto iter = alternatives_.begin(); iter != alternatives_.end(); ++iter) {
-        (*iter)->BuildStateMachine(states, state, end);
+        (*iter)->BuildStateMachine(states, start, end);
     }
 }
 
