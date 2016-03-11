@@ -76,6 +76,7 @@ void MatchSequence::BuildStateMachine(std::vector<MatchState *> *states, MatchSt
             string name("S");
             name += to_string(++count);
             next = new MatchState(name.c_str());
+            states->push_back(next);
         }
         (*iter)->BuildStateMachine(states, current, next);
         current = next;
