@@ -6,8 +6,7 @@
 //  Copyright © 2016 Code samples. All rights reserved.
 //
 
-#ifndef matcher_h
-#define matcher_h
+#pragma once
 
 #include <vector>
 
@@ -16,16 +15,17 @@ class MatchState;
 
 class Matcher {
 public:
+    Matcher(const Matcher &) = delete;
+    Matcher &operator=(const Matcher &) = delete;
+
     ~Matcher();
     static Matcher *Parse(const char *expr);
     bool Match(const char *str);
     
 private:
     Matcher();
-    Matcher(const Matcher &) = delete;
-    
+
     void BuildStateMachine(const MatchAtom *ast);
 
     std::vector<MatchState *> states_;
 };
-#endif /* matcher_h */

@@ -6,8 +6,7 @@
 //  Copyright © 2016 Code samples. All rights reserved.
 //
 
-#ifndef match_parse_h
-#define match_parse_h
+#pragma once
 
 class MatchAtom;
 
@@ -16,4 +15,3 @@ public:
     MatchAtom *Parse(const char *str);
 };
 
-#endif /* match_parse_h */

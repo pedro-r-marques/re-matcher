@@ -6,8 +6,7 @@
 //  Copyright © 2016 Code samples. All rights reserved.
 //
 
-#ifndef util_h
-#define util_h
+#pragma once
 
 template <class Container>
 void STLDeleteValues(Container *container) {
@@ -16,4 +15,4 @@ void STLDeleteValues(Container *container) {
     }
     container->clear();
 }
-#endif /* util_h */
+

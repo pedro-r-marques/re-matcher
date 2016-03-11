@@ -6,17 +6,21 @@
 //  Copyright © 2016 Code samples. All rights reserved.
 //
 
-#ifndef match_state_h
-#define match_state_h
+#pragma once
 
 #include <string>
 #include <vector>
 #include <map>
 
+// MatchState defines a NFA node.
 class MatchState {
 public:
     enum {
+        // When a node becomes feasible, its wildcard transitions are (recursivly) expanded
+        // without consuming any characters from the input stream.
         TRANSITION_STAR = 0,
+        // Plus transitions are expandded if the node has been previously considered to be
+        // feasible.
         TRANSITION_PLUS = 1
     };
 
@@ -29,13 +33,14 @@ public:
 
     const std::vector<MatchState *> *GetCharTransition(char c);
 
-    const std::string name() const {
+    const std::string &name() const {
         return name_;
     }
+
 private:
     MatchState(const MatchState &) = delete;
+    MatchState &operator=(const MatchState &) = delete;
 
     std::string name_;
     EdgeMap edges_;
 };
-#endif /* match_state_h */

@@ -6,8 +6,7 @@
 //  Copyright © 2016 Code samples. All rights reserved.
 //
 
-#ifndef match_ast_h
-#define match_ast_h
+#pragma once
 
 #include <memory>
 #include <string>
@@ -15,18 +14,21 @@
 
 class MatchState;
 
+// MatchAtom is the abstract base class for the objects in the abstract syntax tree.
 class MatchAtom {
 public:
+    MatchAtom();
+    MatchAtom(const MatchAtom &) = delete;
+    MatchAtom &operator=(const MatchAtom &) = delete;
+
     virtual ~MatchAtom();
+
     // Repr returns a string representation of the match.
     virtual std::string Repr() const = 0;
+
+    // Create the state machine representation corresponding to this object.
     virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const = 0;
 
-protected:
-    MatchAtom();
-
-private:
-    MatchAtom(const MatchAtom &) = delete;
 };
 
 class MatchGroup : public MatchAtom {
@@ -36,7 +38,6 @@ public:
         MATCH_OPTIONAL,             // ?
         MATCH_PLUS,                 // +
         MATCH_WILDCARD,             // *
-        MATCH_WILDCARD_NONGREEDY    // (?*)
     };
     MatchGroup(MatchAtom *atom, Cardinality cardinality);
     virtual std::string Repr() const;
@@ -49,7 +50,7 @@ private:
 
 class MatchSequence : public MatchAtom {
 public:
-    ~MatchSequence();
+    virtual ~MatchSequence();
 
     virtual std::string Repr() const;
     virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const;
@@ -62,7 +63,7 @@ private:
 
 class MatchOr : public MatchAtom {
 public:
-    ~MatchOr();
+    virtual ~MatchOr();
     virtual std::string Repr() const;
     virtual void BuildStateMachine(std::vector<MatchState *> *states, MatchState *start, MatchState *end) const;
 
@@ -97,4 +98,3 @@ public:
 private:
     std::string piece_;
 };
-#endif /* match_ast_h */
