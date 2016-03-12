@@ -116,10 +116,16 @@ bool Matcher::Match(const char *str) {
     return false;
 }
 
+static void displaySM(const MatchState *state) {
+    cout << "state: " << state->name() << " " << state << endl;
+}
+
 void Matcher::BuildStateMachine(const MatchAtom *ast) {
     MatchState *start = new MatchState("<start>");
     MatchState *end = new MatchState("<end>");
     states_.push_back(start);
     states_.push_back(end);
     ast->BuildStateMachine(&states_, start, end);
+
+    MatchState::BFSWalk(states_[0], displaySM);
 }

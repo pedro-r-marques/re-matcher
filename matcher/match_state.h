@@ -37,6 +37,8 @@ public:
         return name_;
     }
 
+    static void BFSWalk(const MatchState *start, void (*visitor)(const MatchState *));
+
 private:
     MatchState(const MatchState &) = delete;
     MatchState &operator=(const MatchState &) = delete;

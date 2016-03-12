@@ -59,7 +59,7 @@ bool test_matcher() {
                 success = false;
             }
         }
-        for (int i = 0; i < test->match.size(); i++) {
+        for (int i = 0; i < test->no_match.size(); i++) {
             if (m->Match(test->no_match[i].c_str())) {
                 std::cerr << "match " << test->no_match[i] << " expected false, got true" << std::endl;
                 success = false;
