@@ -413,17 +413,17 @@ MatchAtom *MatchParser::Parse(const char *str) {
     parseExprAltAtom.add(&parseExprAltAtomOptional);
     
     parseSequence parseGroup("group", parseSequence::OP_AND);
+    parseAlternative parseExprItem("expr_item");
+    parseAtomOptional parseExpr("expr", &parseExprItem);
+
     parseGroup.add(&leftParentisis);
-    parseGroup.add(&parseExprAltAtom);
+    parseGroup.add(&parseExpr);
     parseGroup.add(&rightParentisis);
     parseGroup.add(&parseExprOptionalCardinality);
     
-    
-    parseAlternative parseExprItem("expr_item");
     parseExprItem.add(&parseGroup);
     parseExprItem.add(&parseExprAltAtom);
-    
-    parseAtomOptional parseExpr("expr", &parseExprItem);
+
 
     parseAtom *grammar = &parseExpr;
     parseStack stack;

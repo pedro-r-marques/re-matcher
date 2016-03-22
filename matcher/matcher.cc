@@ -59,6 +59,19 @@ static void expandStarTransition(const vector<MatchState *> *in, vector<MatchSta
     }
 }
 
+vector<MatchState *> dedup(vector <MatchState *> input) {
+    vector<MatchState *> output;
+    set<MatchState *> unique;
+    for (auto iter = input.begin(); iter != input.end(); ++iter) {
+        if (unique.find((*iter)) != unique.end()) {
+            continue;
+        }
+        output.push_back((*iter));
+        unique.insert((*iter));
+    }
+    return output;
+}
+
 bool Matcher::Match(const char *str) {
     vector<MatchState *> feasible;
     set<MatchState *> plusSet;
@@ -82,6 +95,7 @@ bool Matcher::Match(const char *str) {
             }
         }
 
+        epsilon = dedup(epsilon);
         feasible.insert(feasible.end(), epsilon.begin(), epsilon.end());
 
         for (auto iter = feasible.begin(); iter != feasible.end(); ++iter) {
@@ -92,7 +106,8 @@ bool Matcher::Match(const char *str) {
                 
             }
         }
-        
+
+        next = dedup(next);
         feasible.swap(next);
     }
 

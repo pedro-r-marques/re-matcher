@@ -45,6 +45,26 @@ bool test_matcher() {
             "a(b|c)+d",
             {"abd", "abcd", "abccd"},
             {"ad", "axd"},
+        },
+        {
+            "(a|b)",
+            {"a", "b"},
+            {"c"},
+        },
+        {
+            "ab(cd)+c",
+            {"abcdc"},
+            {"abc"},
+        },
+        {
+            "(a+a+)+b",
+            {"aab", "aaab"},
+            {"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac", "aaac"},
+        },
+        {
+            "(a|aa)+b",
+            {"aaaaaaaaaaaaaaaaaaaaaab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"},
+            {"aaaaad", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac"},
         }
     };
     bool success = true;
